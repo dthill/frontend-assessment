@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { BehaviorSubject, Observable, take } from 'rxjs'
+import { BehaviorSubject, filter, map, Observable, take } from 'rxjs'
 import { BackendService, Test } from './backend.service'
 
 @Injectable({
@@ -7,7 +7,6 @@ import { BackendService, Test } from './backend.service'
 })
 export class TestProgressService {
     private _testProgress$ = new BehaviorSubject<TestProgress | null>(null)
-
     constructor(private backendService: BackendService) {}
 
     public get testProgress$() {
@@ -27,13 +26,13 @@ export class TestProgressService {
                 test,
                 progress: test.questions.map((question) => ({
                     id: question.id as number,
-                    answerId: -1,
+                    answerIds: null,
                 })),
             })
         })
     }
 
-    public answerQuestion(questionId: number, answerId: number) {
+    public answerQuestion(questionId: number, answerIds: number[]) {
         const currentProgress = this._testProgress$.value
         if (currentProgress == null) {
             throw new Error('Illegal state. Test progress can not be null.')
@@ -42,16 +41,50 @@ export class TestProgressService {
             ...currentProgress,
             progress: currentProgress.progress.map((question) =>
                 question.id === questionId
-                    ? { ...question, answerId }
+                    ? { ...question, answerIds }
                     : question
             ),
         })
+    }
+
+    public get currentQuestion$() {
+        return this.testProgress$.pipe(
+            filter((testProgress) => !!testProgress),
+            map((testProgress) => {
+                const currentQuestionId = testProgress?.progress.find(
+                    (question) => question.answerIds === null
+                )?.id
+                if (!currentQuestionId || currentQuestionId < 0) {
+                    return null
+                }
+                const currentQuestion = testProgress?.test.questions.find(
+                    (question) => question.id === currentQuestionId
+                )
+                if (!currentQuestion) {
+                    return null
+                }
+                return currentQuestion
+            })
+        )
+    }
+
+    public get testComplete$() {
+        return this.testProgress$.pipe(
+            map((testProgress) => {
+                if (!testProgress) {
+                    return false
+                }
+                return testProgress.progress.every(
+                    (question) => question.answerIds !== null
+                )
+            })
+        )
     }
 }
 
 export interface QuestionProgress {
     id: number
-    answerId: number
+    answerIds: number[] | null
 }
 
 export interface TestProgress {

@@ -1,3 +1,2 @@
-<pre>
-  {{testProgress$ | async | json}}
-</pre>
+<app-question *ngIf="!(testComplete$ |async)" [question$]="currentQuestion$"></app-question>
+<app-results *ngIf="testComplete$ |async"></app-results>

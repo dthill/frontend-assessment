@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { BackendService, Test } from '../services/backend.service'
+import { BackendService, Question, Test } from '../services/backend.service'
 import { ActivatedRoute } from '@angular/router'
-import { Observable, Subject, takeUntil } from 'rxjs'
+import { Observable, Subject, takeUntil, tap } from 'rxjs'
 import {
     TestProgress,
     TestProgressService,
@@ -14,6 +14,8 @@ import {
 })
 export class TakeTestComponent implements OnInit, OnDestroy {
     testProgress$: Observable<TestProgress>
+    currentQuestion$: Observable<Question | null>
+    testComplete$: Observable<boolean>
     ngUnsubscribe = new Subject<void>()
 
     constructor(
@@ -22,6 +24,8 @@ export class TakeTestComponent implements OnInit, OnDestroy {
     ) {
         this.testProgress$ = this.testProgressService
             .testProgress$ as Observable<TestProgress>
+        this.currentQuestion$ = this.testProgressService.currentQuestion$
+        this.testComplete$ = this.testProgressService.testComplete$
     }
 
     ngOnInit(): void {

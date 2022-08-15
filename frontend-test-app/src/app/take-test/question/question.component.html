@@ -1,1 +1,10 @@
-<p>question works!</p>
+<div class="card">
+  <h2>{{(question$ | async)?.text}}</h2>
+  <form class="form-group">
+    <div *ngFor="let answer of answerForm.controls; let i = index" >
+      <input [formControl]="answer" type="checkbox" [id]="i" class="form-check-input" >
+      <label [for]="i" class="form-check-label">{{getQuestionText(i) | async}}</label>
+    </div>
+    <button (click)="answer($event)" class="btn btn-primary" type="submit">Next</button>
+  </form>
+</div>
