@@ -3,6 +3,7 @@ import { BackendService, Question, Test } from '../services/backend.service'
 import { ActivatedRoute } from '@angular/router'
 import { Observable, Subject, takeUntil, tap } from 'rxjs'
 import {
+    QuestionProgress,
     TestProgress,
     TestProgressService,
 } from '../services/test-progress.service'
@@ -13,8 +14,8 @@ import {
     styleUrls: ['./take-test.component.scss'],
 })
 export class TakeTestComponent implements OnInit, OnDestroy {
-    testProgress$: Observable<TestProgress>
-    currentQuestion$: Observable<Question | null>
+    testProgress$: Observable<TestProgress | null>
+    currentQuestion$: Observable<QuestionProgress | undefined>
     testComplete$: Observable<boolean>
     ngUnsubscribe = new Subject<void>()
 
@@ -22,8 +23,7 @@ export class TakeTestComponent implements OnInit, OnDestroy {
         private testProgressService: TestProgressService,
         private activatedRoute: ActivatedRoute
     ) {
-        this.testProgress$ = this.testProgressService
-            .testProgress$ as Observable<TestProgress>
+        this.testProgress$ = this.testProgressService.testProgress$
         this.currentQuestion$ = this.testProgressService.currentQuestion$
         this.testComplete$ = this.testProgressService.testComplete$
     }

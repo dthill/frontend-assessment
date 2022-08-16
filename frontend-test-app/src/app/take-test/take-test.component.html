@@ -1,2 +1,3 @@
+<h1 class="text-center mt-4">{{(testProgress$ | async)?.text}}</h1>
 <app-question *ngIf="!(testComplete$ |async)" [question$]="currentQuestion$"></app-question>
 <app-results *ngIf="testComplete$ |async"></app-results>

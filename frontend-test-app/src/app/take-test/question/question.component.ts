@@ -1,37 +1,61 @@
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit } from '@angular/core'
 import { Question } from '../../services/backend.service'
 import { FormArray, FormControl } from '@angular/forms'
-import { map, Observable, take } from 'rxjs'
+import { map, Observable, Subject, take, takeUntil, tap } from 'rxjs'
+import {
+    QuestionProgress,
+    TestProgressService,
+} from '../../services/test-progress.service'
 
 @Component({
     selector: 'app-question',
     templateUrl: './question.component.html',
     styleUrls: ['./question.component.scss'],
 })
-export class QuestionComponent implements OnInit {
+export class QuestionComponent implements OnInit, OnDestroy {
     @Input()
-    question$!: Observable<Question | null>
+    question$!: Observable<QuestionProgress | undefined>
 
     answerForm = new FormArray<FormControl>([])
+    ngUnsubscribe = new Subject<void>()
 
-    constructor() {}
+    constructor(private testProgressService: TestProgressService) {}
 
     ngOnInit(): void {
-        this.question$.pipe(take(1)).subscribe((question) => {
-            question?.answers.forEach((answer) => {
-                this.answerForm.push(new FormControl(false))
+        this.question$
+            .pipe(takeUntil(this.ngUnsubscribe))
+            .subscribe((question) => {
+                if (!question) {
+                    return
+                }
+                this.answerForm = new FormArray<FormControl>(
+                    question.answers.map(() => new FormControl(false))
+                )
             })
-        })
+    }
+
+    ngOnDestroy() {
+        this.ngUnsubscribe.next()
+        this.ngUnsubscribe.complete()
     }
 
     answer(event: Event) {
         event.preventDefault()
-        console.log(this.answerForm.value)
+        this.testProgressService.answerQuestion(this.answerForm.value)
     }
 
-    getQuestionText(index: number) {
+    getAnswerText(index: number) {
         return this.question$.pipe(
-            map((question) => question?.answers[index].text)
+            map((question) => question?.answers?.[index]?.text)
         )
+    }
+    getAnswerId(index: number) {
+        return this.question$.pipe(
+            map((question) => question?.answers?.[index]?.id)
+        )
+    }
+
+    trackByFn(index: number, answer: any) {
+        return index + '_' + answer?.id
     }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject, filter, map, Observable, take } from 'rxjs'
-import { BackendService, Test } from './backend.service'
+import { Answer, BackendService, Question, Test } from './backend.service'
 
 @Injectable({
     providedIn: 'root',
@@ -22,48 +22,46 @@ export class TestProgressService {
             test$ = this.backendService.getRandomTest()
         }
         test$.pipe(take(1)).subscribe((test) => {
-            this._testProgress$.next({
-                test,
-                progress: test.questions.map((question) => ({
-                    id: question.id as number,
-                    answerIds: null,
+            const testProgress: TestProgress = {
+                ...test,
+                questions: test.questions.map((question) => ({
+                    ...question,
+                    answered: false,
+                    answers: question.answers.map((answer) => ({
+                        ...answer,
+                        answered: false,
+                    })),
                 })),
-            })
+            } as TestProgress
+            this._testProgress$.next(testProgress)
         })
     }
 
-    public answerQuestion(questionId: number, answerIds: number[]) {
-        const currentProgress = this._testProgress$.value
-        if (currentProgress == null) {
-            throw new Error('Illegal state. Test progress can not be null.')
+    public answerQuestion(answers: boolean[]) {
+        const testProgress = this._testProgress$.value
+        if (!testProgress) {
+            throw new Error('test progress undefined')
         }
-        this._testProgress$.next({
-            ...currentProgress,
-            progress: currentProgress.progress.map((question) =>
-                question.id === questionId
-                    ? { ...question, answerIds }
-                    : question
-            ),
+        const currentQuestion = this.findCurrentQuestion(testProgress)
+        if (!currentQuestion) {
+            throw new Error('current question undefined')
+        }
+        currentQuestion.answered = true
+        currentQuestion.answers.forEach((answer, index) => {
+            answer.answered = answers[index]
         })
+        this._testProgress$.next(testProgress)
+        console.log(this._testProgress$.value, answers)
     }
 
-    public get currentQuestion$() {
+    public get currentQuestion$(): Observable<QuestionProgress | undefined> {
         return this.testProgress$.pipe(
             filter((testProgress) => !!testProgress),
             map((testProgress) => {
-                const currentQuestionId = testProgress?.progress.find(
-                    (question) => question.answerIds === null
-                )?.id
-                if (!currentQuestionId || currentQuestionId < 0) {
-                    return null
+                if (testProgress) {
+                    return this.findCurrentQuestion(testProgress)
                 }
-                const currentQuestion = testProgress?.test.questions.find(
-                    (question) => question.id === currentQuestionId
-                )
-                if (!currentQuestion) {
-                    return null
-                }
-                return currentQuestion
+                return undefined
             })
         )
     }
@@ -74,20 +72,36 @@ export class TestProgressService {
                 if (!testProgress) {
                     return false
                 }
-                return testProgress.progress.every(
-                    (question) => question.answerIds !== null
+                return testProgress.questions.every(
+                    (question) => question.answered
                 )
             })
         )
     }
+
+    findCurrentQuestion(
+        testProgress: TestProgress
+    ): QuestionProgress | undefined {
+        return testProgress.questions.find((question) => !question.answered)
+    }
+}
+
+export interface AnswerProgress extends Answer {
+    id: number
+    correct: boolean
+    text: string
+    answered: boolean
 }
 
 export interface QuestionProgress {
     id: number
-    answerIds: number[] | null
+    text: string
+    answers: AnswerProgress[]
+    answered: boolean
 }
 
 export interface TestProgress {
-    test: Test
-    progress: QuestionProgress[]
+    id: number
+    text: string
+    questions: QuestionProgress[]
 }
