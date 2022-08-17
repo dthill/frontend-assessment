@@ -1,75 +1,75 @@
 <form [formGroup]="testForm" class="form-group m-4">
-    <h1 class="text-center">Create new test</h1>
-    <label class="form-label h2" for="test-text">Test Title</label>
-    <input
-        class="form-control"
-        formControlName="text"
-        id="test-text"
-        type="text"
-    />
-    <div class="card m-4 p-3" formArrayName="questions">
-        <div *ngFor="let question of questions.controls; let i = index">
-            <div [formGroupName]="i">
-                <label [for]="i + '-question-text'" class="form-label h3"
-                    >{{ i + 1 }}. Question</label
-                >
-                <textarea
-                    [id]="i + '-question-text'"
-                    class="form-control"
-                    formControlName="text"
-                ></textarea>
-                <div class="card m-4 p-3" formArrayName="answers">
-                    <div
-                        *ngFor="
+  <h1 class="text-center">Create new test</h1>
+  <label class="form-label h2" for="test-text">Test Title</label>
+  <input
+    class="form-control"
+    formControlName="text"
+    id="test-text"
+    type="text"
+  />
+  <div class="card m-4 p-3" formArrayName="questions">
+    <div *ngFor="let question of questions.controls; let i = index">
+      <div [formGroupName]="i">
+        <label [for]="i + '-question-text'" class="form-label h3"
+        >{{ i + 1 }}. Question</label
+        >
+        <textarea
+          [id]="i + '-question-text'"
+          class="form-control"
+          formControlName="text"
+        ></textarea>
+        <div class="card m-4 p-3" formArrayName="answers">
+          <div
+            *ngFor="
                             let answer of answers(i).controls;
                             let j = index
                         "
-                    >
-                        <div [formGroupName]="j">
-                            <label
-                                [for]="j + '-answer-text'"
-                                class="form-label h4 mt-3"
-                                >{{ i + 1 }}.{{ j + 1 }} Answer</label
-                            >
-                            <textarea
-                                [id]="j + '-answer-text'"
-                                class="form-control"
-                                formControlName="text"
-                            ></textarea>
-                            <div class="form-check">
-                                <label
-                                    [for]="j + '-correct-text'"
-                                    class="form-check-label"
-                                    >Correct</label
-                                >
-                                <input
-                                    [id]="j + '-correct-text'"
-                                    class="form-check-input"
-                                    formControlName="correct"
-                                    type="checkbox"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                        (click)="addAnswer(i)"
-                        class="btn btn-outline-secondary mt-3"
-                    >
-                        Add Answer
-                    </button>
-                </div>
+          >
+            <div [formGroupName]="j">
+              <label
+                [for]="j + '-answer-text'"
+                class="form-label h4 mt-3"
+              >{{ i + 1 }}.{{ j + 1 }} Answer</label
+              >
+              <textarea
+                [id]="j + '-answer-text'"
+                class="form-control"
+                formControlName="text"
+              ></textarea>
+              <div class="form-check">
+                <label
+                  [for]="j + '-correct-text'"
+                  class="form-check-label"
+                >Correct</label
+                >
+                <input
+                  [id]="j + '-correct-text'"
+                  class="form-check-input"
+                  formControlName="correct"
+                  type="checkbox"
+                />
+              </div>
             </div>
+          </div>
+          <button
+            (click)="addAnswer(i)"
+            class="btn btn-outline-secondary mt-3"
+          >
+            Add Answer
+          </button>
         </div>
-        <button (click)="addQuestion()" class="btn btn-outline-secondary mt-3">
-            Add Question
-        </button>
+      </div>
     </div>
-    <button
-        (click)="submit()"
-        [disabled]="testForm.invalid"
-        class="btn btn-primary"
-        type="submit"
-    >
-        Submit
+    <button (click)="addQuestion()" class="btn btn-outline-secondary mt-3">
+      Add Question
     </button>
+  </div>
+  <button
+    (click)="submit()"
+    [disabled]="testForm.invalid"
+    class="btn btn-primary"
+    type="submit"
+  >
+    Submit
+  </button>
 </form>

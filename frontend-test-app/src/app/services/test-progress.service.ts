@@ -1,16 +1,42 @@
 import { Injectable } from '@angular/core'
 import { BehaviorSubject, filter, map, Observable, take } from 'rxjs'
-import { Answer, BackendService, Question, Test } from './backend.service'
+import { Answer, BackendService, Test } from './backend.service'
 
 @Injectable({
     providedIn: 'root',
 })
 export class TestProgressService {
-    private _testProgress$ = new BehaviorSubject<TestProgress | null>(null)
     constructor(private backendService: BackendService) {}
+
+    private _testProgress$ = new BehaviorSubject<TestProgress | null>(null)
 
     public get testProgress$() {
         return this._testProgress$.asObservable()
+    }
+
+    public get currentQuestion$(): Observable<QuestionProgress | undefined> {
+        return this.testProgress$.pipe(
+            filter((testProgress) => !!testProgress),
+            map((testProgress) => {
+                if (testProgress) {
+                    return this.findCurrentQuestion(testProgress)
+                }
+                return undefined
+            })
+        )
+    }
+
+    public get testComplete$() {
+        return this.testProgress$.pipe(
+            map((testProgress) => {
+                if (!testProgress) {
+                    return false
+                }
+                return testProgress.questions.every(
+                    (question) => question.answered
+                )
+            })
+        )
     }
 
     public startTest(stringId?: string | null) {
@@ -52,31 +78,6 @@ export class TestProgressService {
         })
         this._testProgress$.next(testProgress)
         console.log(this._testProgress$.value, answers)
-    }
-
-    public get currentQuestion$(): Observable<QuestionProgress | undefined> {
-        return this.testProgress$.pipe(
-            filter((testProgress) => !!testProgress),
-            map((testProgress) => {
-                if (testProgress) {
-                    return this.findCurrentQuestion(testProgress)
-                }
-                return undefined
-            })
-        )
-    }
-
-    public get testComplete$() {
-        return this.testProgress$.pipe(
-            map((testProgress) => {
-                if (!testProgress) {
-                    return false
-                }
-                return testProgress.questions.every(
-                    (question) => question.answered
-                )
-            })
-        )
     }
 
     findCurrentQuestion(

@@ -1,7 +1,6 @@
 import { Component, Input, OnDestroy, OnInit } from '@angular/core'
-import { Question } from '../../services/backend.service'
 import { FormArray, FormControl } from '@angular/forms'
-import { map, Observable, Subject, take, takeUntil, tap } from 'rxjs'
+import { map, Observable, Subject, takeUntil } from 'rxjs'
 import {
     QuestionProgress,
     TestProgressService,
@@ -49,6 +48,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
             map((question) => question?.answers?.[index]?.text)
         )
     }
+
     getAnswerId(index: number) {
         return this.question$.pipe(
             map((question) => question?.answers?.[index]?.id)

@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core'
-import { BackendService, Question, Test } from '../services/backend.service'
 import { ActivatedRoute } from '@angular/router'
-import { Observable, Subject, takeUntil, tap } from 'rxjs'
+import { Observable, Subject, takeUntil } from 'rxjs'
 import {
     QuestionProgress,
     TestProgress,

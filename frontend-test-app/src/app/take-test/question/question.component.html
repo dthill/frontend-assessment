@@ -2,8 +2,10 @@
   <div class="card p-3">
     <h2>{{(question$ | async)?.text}}</h2>
     <form class="form-group">
-      <div class="my-2" *ngFor="let answer of answerForm.controls; let i = index; trackBy: trackByFn">
-        <input [formControl]="answer" type="checkbox" [id]="i" [value]="getAnswerId(i) | async" class="form-check-input">
+      <div *ngFor="let answer of answerForm.controls; let i = index; trackBy: trackByFn"
+           class="my-2">
+        <input [formControl]="answer" [id]="i" [value]="getAnswerId(i) | async" class="form-check-input"
+               type="checkbox">
         <label [for]="i" class="form-check-label">{{getAnswerText(i) | async}}</label>
       </div>
       <button (click)="answer($event)" class="btn btn-primary mt-2" type="submit">Next</button>

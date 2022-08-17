@@ -1,1 +1,23 @@
-<p>results works!</p>
+<div>
+  <h2 class="text-center">Test Results</h2>
+  <div class="question-container pb-1" *ngFor="let question of testProgress?.questions">
+    <div class="card p-3"> <h3 class="text-center">{{question.text}}</h3>
+      <div *ngFor="let answer of question.answers; let i = index" class="form-group">
+        <div
+          class="form-check"
+          [class.bg-success]="answer.correct && answer.answered"
+          [class.bg-warning]="answer.correct !== answer.answered"
+        >
+          <input [id]="i" class="form-check-input" type="checkbox" [checked]="answer.answered" disabled>
+          <label
+            [for]="i"
+            class="form-check-label w-100 d-flex align-items-center "
+          >
+               <span class="d-inline-block w-50 h-100">{{answer.text}}</span>
+               <span class="d-inline-block w-50 h-100 text-black" *ngIf="answer.correct">Correct</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
