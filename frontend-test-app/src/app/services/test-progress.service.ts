@@ -33,7 +33,8 @@ export class TestProgressService {
                     return false
                 }
                 return testProgress.questions.every(
-                    (question) => question.answered
+                    (question) =>
+                        question.questionStatus !== QuestionStatus.noAnswer
                 )
             })
         )
@@ -52,7 +53,7 @@ export class TestProgressService {
                 ...test,
                 questions: test.questions.map((question) => ({
                     ...question,
-                    answered: false,
+                    questionStatus: QuestionStatus.noAnswer,
                     answers: question.answers.map((answer) => ({
                         ...answer,
                         answered: false,
@@ -72,10 +73,11 @@ export class TestProgressService {
         if (!currentQuestion) {
             throw new Error('current question undefined')
         }
-        currentQuestion.answered = true
         currentQuestion.answers.forEach((answer, index) => {
             answer.answered = answers[index]
         })
+        currentQuestion.questionStatus =
+            this.checkQuestionStatus(currentQuestion)
         this._testProgress$.next(testProgress)
         console.log(this._testProgress$.value, answers)
     }
@@ -83,8 +85,24 @@ export class TestProgressService {
     findCurrentQuestion(
         testProgress: TestProgress
     ): QuestionProgress | undefined {
-        return testProgress.questions.find((question) => !question.answered)
+        return testProgress.questions.find(
+            (question) => question.questionStatus === QuestionStatus.noAnswer
+        )
     }
+
+    checkQuestionStatus(question: QuestionProgress): QuestionStatus {
+        return question.answers.every(
+            (answer) => answer.answered === answer.correct
+        )
+            ? QuestionStatus.correct
+            : QuestionStatus.false
+    }
+}
+
+export enum QuestionStatus {
+    correct = 'correct',
+    false = 'false',
+    noAnswer = 'no answer',
 }
 
 export interface AnswerProgress extends Answer {
@@ -98,7 +116,7 @@ export interface QuestionProgress {
     id: number
     text: string
     answers: AnswerProgress[]
-    answered: boolean
+    questionStatus: QuestionStatus
 }
 
 export interface TestProgress {

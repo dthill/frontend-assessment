@@ -4,6 +4,11 @@
   margin: 3rem auto;
 }
 
-.form-check-label {
-  transform: translateY(-3px);
+.card {
+  position: relative;
 }
+ .correct {
+   position: absolute;
+   right: -50px;
+   top: -50px;
+ }

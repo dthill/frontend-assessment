@@ -1,0 +1,9 @@
+$radius: 130px;
+h1{
+  width: $radius;
+  height: $radius;
+  border-radius: $radius;
+  line-height: $radius - 10px;
+  transform: rotate(25deg);
+  border: 5px double white;
+}
