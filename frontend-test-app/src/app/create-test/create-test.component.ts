@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core'
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms'
 import { BackendService, Test } from '../services/backend.service'
-import { take } from 'rxjs'
+import { BehaviorSubject, catchError, of, take } from 'rxjs'
+import { Router } from '@angular/router'
 
 @Component({
     selector: 'app-create-test',
@@ -9,12 +10,18 @@ import { take } from 'rxjs'
     styleUrls: ['./create-test.component.scss'],
 })
 export class CreateTestComponent implements OnInit {
+    success$ = new BehaviorSubject<Number | null>(null)
+    error$ = new BehaviorSubject(false)
+    loading$ = new BehaviorSubject(false)
     testForm = new FormGroup({
         text: new FormControl('', [Validators.required]),
         questions: new FormArray([this.questionForm()]),
     })
 
-    constructor(private backendService: BackendService) {}
+    constructor(
+        private backendService: BackendService,
+        private router: Router
+    ) {}
 
     get questions() {
         return this.testForm.get('questions') as FormArray
@@ -49,12 +56,20 @@ export class CreateTestComponent implements OnInit {
     }
 
     submit() {
-        console.log(JSON.stringify(this.testForm.value, null, 2))
+        this.loading$.next(true)
         this.backendService
             .addTest(this.testForm.value as Test)
-            .pipe(take(1))
-            .subscribe((response) => {
-                console.log(response)
+            .pipe(
+                catchError(() => of(null)),
+                take(1)
+            )
+            .subscribe((response: any) => {
+                this.loading$.next(false)
+                if (response === null) {
+                    this.error$.next(true)
+                } else {
+                    this.success$.next(response)
+                }
             })
     }
 }

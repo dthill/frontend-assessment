@@ -1,6 +1,9 @@
-<div>
+<div class="text-center px-3">
   <h2 class="text-center">Test Results</h2>
-  <div class="question-container pb-1" *ngFor="let question of testProgress?.questions">
+  <p class="text-center">{{testResults?.correct}}/{{testResults?.questions}} correctly answered questions</p>
+  <button class="btn btn-primary m-2" [routerLink]="['']">Take another test</button>
+  <button class="btn btn-primary m-2" [routerLink]="['create-test']">Create new test</button>
+  <div class="question-container pb-1 text-white" *ngFor="let question of testProgress?.questions">
     <div
       class="card p-3"
       [class.bg-danger]="question.questionStatus === questionStatus.false"
@@ -11,9 +14,10 @@
         class="correct"
       >
       </app-correct-stamp>
-      <h3
-      class="text-center">{{question.text}}</h3>
-      <table class="table">
+      <h3 class="text-center">
+        {{question.text}}
+      </h3>
+      <table class="table text-white">
         <thead>
         <tr>
           <th scope="col"></th>

@@ -5,6 +5,7 @@ import {
     QuestionProgress,
     TestProgress,
     TestProgressService,
+    TestResults,
 } from '../services/test-progress.service'
 
 @Component({
@@ -16,6 +17,8 @@ export class TakeTestComponent implements OnInit, OnDestroy {
     testProgress$: Observable<TestProgress | null>
     currentQuestion$: Observable<QuestionProgress | undefined>
     testComplete$: Observable<boolean>
+    testResults$: Observable<TestResults>
+
     ngUnsubscribe = new Subject<void>()
 
     constructor(
@@ -25,6 +28,7 @@ export class TakeTestComponent implements OnInit, OnDestroy {
         this.testProgress$ = this.testProgressService.testProgress$
         this.currentQuestion$ = this.testProgressService.currentQuestion$
         this.testComplete$ = this.testProgressService.testComplete$
+        this.testResults$ = this.testProgressService.testResults$
     }
 
     ngOnInit(): void {

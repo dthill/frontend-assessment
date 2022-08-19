@@ -1,4 +1,4 @@
-<form [formGroup]="testForm" class="form-group m-4">
+<form *ngIf="!(success$ | async)" [formGroup]="testForm" class="form-group m-4">
   <h1 class="text-center">Create new test</h1>
   <label class="form-label h2" for="test-text">Test Title</label>
   <input
@@ -66,10 +66,12 @@
   </div>
   <button
     (click)="submit()"
-    [disabled]="testForm.invalid"
+    [disabled]="testForm.invalid || (loading$ | async)"
     class="btn btn-primary"
     type="submit"
   >
     Submit
   </button>
+  <p *ngIf="error$ | async"  class="m-3 text-danger">An error occurred please try again later</p>
 </form>
+<app-success *ngIf="success$ | async" [testId]="success$ | async"></app-success>

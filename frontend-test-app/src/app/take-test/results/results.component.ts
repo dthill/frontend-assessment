@@ -3,6 +3,7 @@ import {
     QuestionStatus,
     TestProgress,
     TestProgressService,
+    TestResults,
 } from '../../services/test-progress.service'
 import { Observable } from 'rxjs'
 
@@ -16,6 +17,9 @@ export class ResultsComponent implements OnInit {
 
     @Input()
     testProgress!: TestProgress | null
+
+    @Input()
+    testResults!: TestResults | null
 
     constructor() {}
 

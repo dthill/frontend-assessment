@@ -82,6 +82,20 @@ export class TestProgressService {
         console.log(this._testProgress$.value, answers)
     }
 
+    get testResults$() {
+        return this.testProgress$.pipe(
+            map((testProgress) => {
+                const questions = testProgress?.questions.length || 0
+                const correct =
+                    testProgress?.questions.filter(
+                        (question) =>
+                            question.questionStatus === QuestionStatus.correct
+                    ).length || 0
+                return { questions, correct }
+            })
+        )
+    }
+
     findCurrentQuestion(
         testProgress: TestProgress
     ): QuestionProgress | undefined {
@@ -123,4 +137,9 @@ export interface TestProgress {
     id: number
     text: string
     questions: QuestionProgress[]
+}
+
+export interface TestResults {
+    questions: number
+    correct: number
 }
