@@ -1,0 +1,1036 @@
+<router-outlet></router-outlet>
+<form *ngIf="!(success$ | async)" [formGroup]="testForm" class="form-group m-4">
+  <h1 class="text-center">Create new test</h1>
+  <label class="form-label h2" for="test-text">Test Title</label>
+  <input
+    class="form-control"
+    formControlName="text"
+    id="test-text"
+    type="text"
+  />
+  <div class="card m-4 p-3" formArrayName="questions">
+    <div *ngFor="let question of questions.controls; let i = index">
+      <div [formGroupName]="i">
+        <label [for]="i + '-question-text'" class="form-label h3"
+        >{{ i + 1 }}. Question</label
+        >
+        <textarea
+          [id]="i + '-question-text'"
+          class="form-control"
+          formControlName="text"
+        ></textarea>
+        <div class="card m-4 p-3" formArrayName="answers">
+          <div
+            *ngFor="
+                            let answer of answers(i).controls;
+                            let j = index
+                        "
+          >
+            <div [formGroupName]="j">
+              <label
+                [for]="j + '-answer-text'"
+                class="form-label h4 mt-3"
+              >{{ i + 1 }}.{{ j + 1 }} Answer</label
+              >
+              <textarea
+                [id]="j + '-answer-text'"
+                class="form-control"
+                formControlName="text"
+              ></textarea>
+              <div class="form-check">
+                <label
+                  [for]="j + '-correct-text'"
+                  class="form-check-label"
+                >Correct</label
+                >
+                <input
+                  [id]="j + '-correct-text'"
+                  class="form-check-input"
+                  formControlName="correct"
+                  type="checkbox"
+                />
+              </div>
+            </div>
+          </div>
+          <button
+            (click)="addAnswer(i)"
+            class="btn btn-outline-secondary mt-3"
+          >
+            Add Answer
+          </button>
+        </div>
+      </div>
+    </div>
+    <button (click)="addQuestion()" class="btn btn-outline-secondary mt-3">
+      Add Question
+    </button>
+  </div>
+  <button
+    (click)="submit()"
+    [disabled]="testForm.invalid || (loading$ | async)"
+    class="btn btn-primary"
+    type="submit"
+  >
+    Submit
+  </button>
+  <p *ngIf="error$ | async"  class="m-3 text-danger">An error occurred please try again later</p>
+</form>
+<app-success *ngIf="success$ | async" [testId]="success$ | async"></app-success>
+
+<h1 class="text-center m-5">Your test was created successfully</h1>
+<p class="text-center m-5">You can see and share your test <a href="/{{testId}}" target="_blank">here</a></p>
+<div class="question-container p-3">
+  <div class="card p-3">
+    <h2>{{(question$ | async)?.text}}</h2>
+    <form class="form-group">
+      <div *ngFor="let answer of answerForm.controls; let i = index; trackBy: trackByFn"
+           class="my-2">
+        <input [formControl]="answer" [id]="i" [value]="getAnswerId(i) | async" class="form-check-input"
+               type="checkbox">
+        <label [for]="i" class="form-check-label">{{getAnswerText(i) | async}}</label>
+      </div>
+      <button (click)="answer($event)" class="btn btn-primary mt-2" type="submit">Next</button>
+    </form>
+  </div>
+</div>
+<h1 class="bg-primary text-white text-center" >Correct</h1>
+<div class="text-center px-3">
+  <h2 class="text-center">Test Results</h2>
+  <p class="text-center">{{testResults?.correct}}/{{testResults?.questions}} correctly answered questions</p>
+  <button class="btn btn-primary m-2" [routerLink]="['']">Take another test</button>
+  <button class="btn btn-primary m-2" [routerLink]="['create-test']">Create new test</button>
+  <div class="question-container pb-1 text-white" *ngFor="let question of testProgress?.questions">
+    <div
+      class="card p-3"
+      [class.bg-danger]="question.questionStatus === questionStatus.false"
+      [class.bg-success]="question.questionStatus === questionStatus.correct"
+    >
+      <app-correct-stamp
+        *ngIf="question.questionStatus === questionStatus.correct"
+        class="correct"
+      >
+      </app-correct-stamp>
+      <h3 class="text-center">
+        {{question.text}}
+      </h3>
+      <table class="table text-white">
+        <thead>
+        <tr>
+          <th scope="col"></th>
+          <th scope="col">Answered</th>
+          <th scope="col">Solution</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let answer of question.answers; let i = index">
+          <th scope="row">{{answer.text}}</th>
+          <td>{{answer.answered}}</td>
+          <td>{{answer.correct}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<h1 class="text-center mt-4">{{(testProgress$ | async)?.text}}</h1>
+<app-question *ngIf="!(testComplete$ |async)" [question$]="currentQuestion$"></app-question>
+<app-results
+  *ngIf="testComplete$ |async"
+  [testProgress]="testProgress$ | async"
+  [testResults]="testResults$ | async"
+>
+</app-results>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>TestApp</title>
+  <base href="/" />
+  <meta content="width=device-width, initial-scale=1" name="viewport" />
+  <link href="favicon.ico" rel="icon" type="image/x-icon" />
+</head>
+<body>
+<app-root></app-root>
+</body>
+</html>
+import { NgModule } from '@angular/core'
+import { RouterModule, Routes } from '@angular/router'
+
+const routes: Routes = [
+    {
+        path: 'create-test',
+        loadChildren: () =>
+            import('./create-test/create-test.module').then(
+                (m) => m.CreateTestModule
+            ),
+    },
+    {
+        path: '',
+        loadChildren: () =>
+            import('./take-test/take-test.module').then(
+                (m) => m.TakeTestModule
+            ),
+    },
+    {
+        path: '**',
+        loadChildren: () =>
+            import('./take-test/take-test.module').then(
+                (m) => m.TakeTestModule
+            ),
+    },
+]
+
+@NgModule({
+    imports: [RouterModule.forRoot(routes, { onSameUrlNavigation: 'reload' })],
+    exports: [RouterModule],
+})
+export class AppRoutingModule {}
+import { TestBed } from '@angular/core/testing'
+import { RouterTestingModule } from '@angular/router/testing'
+import { AppComponent } from './app.component'
+
+describe('AppComponent', () => {
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [RouterTestingModule],
+            declarations: [AppComponent],
+        }).compileComponents()
+    })
+
+    it('should create the app', () => {
+        const fixture = TestBed.createComponent(AppComponent)
+        const app = fixture.componentInstance
+        expect(app).toBeTruthy()
+    })
+
+    it(`should have as title 'test-app'`, () => {
+        const fixture = TestBed.createComponent(AppComponent)
+        const app = fixture.componentInstance
+        expect(app.title).toEqual('test-app')
+    })
+
+    it('should render title', () => {
+        const fixture = TestBed.createComponent(AppComponent)
+        fixture.detectChanges()
+        const compiled = fixture.nativeElement as HTMLElement
+        expect(compiled.querySelector('.content span')?.textContent).toContain(
+            'test-app app is running!'
+        )
+    })
+})
+import { Component } from '@angular/core'
+
+@Component({
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+})
+export class AppComponent {
+    title = 'test-app'
+}
+import { NgModule } from '@angular/core'
+import { BrowserModule } from '@angular/platform-browser'
+
+import { AppRoutingModule } from './app-routing.module'
+import { AppComponent } from './app.component'
+import { HttpClientModule } from '@angular/common/http'
+
+@NgModule({
+    declarations: [AppComponent],
+    imports: [BrowserModule, AppRoutingModule, HttpClientModule],
+    providers: [],
+    bootstrap: [AppComponent],
+})
+export class AppModule {}
+import { NgModule } from '@angular/core'
+import { RouterModule, Routes } from '@angular/router'
+import { CreateTestComponent } from './create-test.component'
+
+const routes: Routes = [{ path: '', component: CreateTestComponent }]
+
+@NgModule({
+    imports: [RouterModule.forChild(routes)],
+    exports: [RouterModule],
+})
+export class CreateTestRoutingModule {}
+import { ComponentFixture, TestBed } from '@angular/core/testing'
+
+import { CreateTestComponent } from './create-test.component'
+
+describe('CreateTestComponent', () => {
+    let component: CreateTestComponent
+    let fixture: ComponentFixture<CreateTestComponent>
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [CreateTestComponent],
+        }).compileComponents()
+
+        fixture = TestBed.createComponent(CreateTestComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+})
+import { Component, OnInit } from '@angular/core'
+import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms'
+import { BackendService, Test } from '../services/backend.service'
+import { BehaviorSubject, catchError, of, take } from 'rxjs'
+import { Router } from '@angular/router'
+
+@Component({
+    selector: 'app-create-test',
+    templateUrl: './create-test.component.html',
+    styleUrls: ['./create-test.component.scss'],
+})
+export class CreateTestComponent implements OnInit {
+    success$ = new BehaviorSubject<Number | null>(null)
+    error$ = new BehaviorSubject(false)
+    loading$ = new BehaviorSubject(false)
+    testForm = new FormGroup({
+        text: new FormControl('', [Validators.required]),
+        questions: new FormArray([this.questionForm()]),
+    })
+
+    constructor(
+        private backendService: BackendService,
+        private router: Router
+    ) {}
+
+    get questions() {
+        return this.testForm.get('questions') as FormArray
+    }
+
+    ngOnInit(): void {}
+
+    addQuestion() {
+        this.questions.push(this.questionForm())
+    }
+
+    addAnswer(questionIndex: number) {
+        this.answers(questionIndex).push(this.answerForm())
+    }
+
+    answers(index: number) {
+        return this.questions.get([index, 'answers']) as FormArray
+    }
+
+    answerForm() {
+        return new FormGroup({
+            text: new FormControl('', [Validators.required]),
+            correct: new FormControl(false),
+        })
+    }
+
+    questionForm() {
+        return new FormGroup({
+            text: new FormControl('', [Validators.required]),
+            answers: new FormArray([this.answerForm()]),
+        })
+    }
+
+    submit() {
+        this.loading$.next(true)
+        this.backendService
+            .addTest(this.testForm.value as Test)
+            .pipe(
+                catchError(() => of(null)),
+                take(1)
+            )
+            .subscribe((response: any) => {
+                this.loading$.next(false)
+                if (response === null) {
+                    this.error$.next(true)
+                } else {
+                    this.success$.next(response)
+                }
+            })
+    }
+}
+import { NgModule } from '@angular/core'
+import { CommonModule } from '@angular/common'
+
+import { CreateTestRoutingModule } from './create-test-routing.module'
+import { CreateTestComponent } from './create-test.component'
+import { ReactiveFormsModule } from '@angular/forms';
+import { SuccessComponent } from './success/success.component'
+
+@NgModule({
+    declarations: [CreateTestComponent, SuccessComponent],
+    imports: [CommonModule, CreateTestRoutingModule, ReactiveFormsModule],
+})
+export class CreateTestModule {}
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { SuccessComponent } from './success.component';
+
+describe('SuccessComponent', () => {
+  let component: SuccessComponent;
+  let fixture: ComponentFixture<SuccessComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ SuccessComponent ]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(SuccessComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+import { Component, Input, OnInit } from '@angular/core'
+
+@Component({
+    selector: 'app-success',
+    templateUrl: './success.component.html',
+    styleUrls: ['./success.component.scss'],
+})
+export class SuccessComponent implements OnInit {
+    @Input()
+    testId!: Number | null
+
+    constructor() {}
+
+    ngOnInit(): void {}
+}
+import { TestBed } from '@angular/core/testing'
+
+import { BackendService } from './backend.service'
+
+describe('BackendService', () => {
+    let service: BackendService
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({})
+        service = TestBed.inject(BackendService)
+    })
+
+    it('should be created', () => {
+        expect(service).toBeTruthy()
+    })
+})
+import { Injectable } from '@angular/core'
+import { HttpClient } from '@angular/common/http'
+import { environment } from '../../environments/environment'
+import { Observable } from 'rxjs'
+
+@Injectable({
+    providedIn: 'root',
+})
+export class BackendService {
+    constructor(private httpClient: HttpClient) {}
+
+    addTest(test: Test) {
+        return this.httpClient.post(`${environment.backendUrl}/api/test`, {
+            test: test,
+        })
+    }
+
+    getRandomTest(): Observable<Test> {
+        return this.httpClient.get(`${environment.backendUrl}/api/test`) as any
+    }
+
+    getTest(id: number): Observable<Test> {
+        return this.httpClient.get(
+            `${environment.backendUrl}/api/test/${id}`
+        ) as any
+    }
+}
+
+export interface Answer {
+    id?: number
+    text: string
+    correct: boolean
+}
+
+export interface Question {
+    id?: number
+    text: string
+    answers: Answer[]
+}
+
+export interface Test {
+    id?: number
+    text: String
+    questions: Question[]
+}
+import { TestBed } from '@angular/core/testing'
+
+import { TestProgressService } from './test-progress.service'
+
+describe('TestProgressService', () => {
+    let service: TestProgressService
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({})
+        service = TestBed.inject(TestProgressService)
+    })
+
+    it('should be created', () => {
+        expect(service).toBeTruthy()
+    })
+})
+import { Injectable } from '@angular/core'
+import { BehaviorSubject, filter, map, Observable, take } from 'rxjs'
+import { Answer, BackendService, Test } from './backend.service'
+
+@Injectable({
+    providedIn: 'root',
+})
+export class TestProgressService {
+    constructor(private backendService: BackendService) {}
+
+    private _testProgress$ = new BehaviorSubject<TestProgress | null>(null)
+
+    public get testProgress$() {
+        return this._testProgress$.asObservable()
+    }
+
+    public get currentQuestion$(): Observable<QuestionProgress | undefined> {
+        return this.testProgress$.pipe(
+            filter((testProgress) => !!testProgress),
+            map((testProgress) => {
+                if (testProgress) {
+                    return this.findCurrentQuestion(testProgress)
+                }
+                return undefined
+            })
+        )
+    }
+
+    public get testComplete$() {
+        return this.testProgress$.pipe(
+            map((testProgress) => {
+                if (!testProgress) {
+                    return false
+                }
+                return testProgress.questions.every(
+                    (question) =>
+                        question.questionStatus !== QuestionStatus.noAnswer
+                )
+            })
+        )
+    }
+
+    public startTest(stringId?: string | null) {
+        let test$: Observable<Test>
+        const id = parseInt(stringId as any)
+        if (id) {
+            test$ = this.backendService.getTest(id)
+        } else {
+            test$ = this.backendService.getRandomTest()
+        }
+        test$.pipe(take(1)).subscribe((test) => {
+            const testProgress: TestProgress = {
+                ...test,
+                questions: test.questions.map((question) => ({
+                    ...question,
+                    questionStatus: QuestionStatus.noAnswer,
+                    answers: question.answers.map((answer) => ({
+                        ...answer,
+                        answered: false,
+                    })),
+                })),
+            } as TestProgress
+            this._testProgress$.next(testProgress)
+        })
+    }
+
+    public answerQuestion(answers: boolean[]) {
+        const testProgress = this._testProgress$.value
+        if (!testProgress) {
+            throw new Error('test progress undefined')
+        }
+        const currentQuestion = this.findCurrentQuestion(testProgress)
+        if (!currentQuestion) {
+            throw new Error('current question undefined')
+        }
+        currentQuestion.answers.forEach((answer, index) => {
+            answer.answered = answers[index]
+        })
+        currentQuestion.questionStatus =
+            this.checkQuestionStatus(currentQuestion)
+        this._testProgress$.next(testProgress)
+        console.log(this._testProgress$.value, answers)
+    }
+
+    get testResults$() {
+        return this.testProgress$.pipe(
+            map((testProgress) => {
+                const questions = testProgress?.questions.length || 0
+                const correct =
+                    testProgress?.questions.filter(
+                        (question) =>
+                            question.questionStatus === QuestionStatus.correct
+                    ).length || 0
+                return { questions, correct }
+            })
+        )
+    }
+
+    findCurrentQuestion(
+        testProgress: TestProgress
+    ): QuestionProgress | undefined {
+        return testProgress.questions.find(
+            (question) => question.questionStatus === QuestionStatus.noAnswer
+        )
+    }
+
+    checkQuestionStatus(question: QuestionProgress): QuestionStatus {
+        return question.answers.every(
+            (answer) => answer.answered === answer.correct
+        )
+            ? QuestionStatus.correct
+            : QuestionStatus.false
+    }
+}
+
+export enum QuestionStatus {
+    correct = 'correct',
+    false = 'false',
+    noAnswer = 'no answer',
+}
+
+export interface AnswerProgress extends Answer {
+    id: number
+    correct: boolean
+    text: string
+    answered: boolean
+}
+
+export interface QuestionProgress {
+    id: number
+    text: string
+    answers: AnswerProgress[]
+    questionStatus: QuestionStatus
+}
+
+export interface TestProgress {
+    id: number
+    text: string
+    questions: QuestionProgress[]
+}
+
+export interface TestResults {
+    questions: number
+    correct: number
+}
+import { ComponentFixture, TestBed } from '@angular/core/testing'
+
+import { QuestionComponent } from './question.component'
+
+describe('QuestionComponent', () => {
+    let component: QuestionComponent
+    let fixture: ComponentFixture<QuestionComponent>
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [QuestionComponent],
+        }).compileComponents()
+
+        fixture = TestBed.createComponent(QuestionComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+})
+import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { FormArray, FormControl } from '@angular/forms'
+import { map, Observable, Subject, takeUntil } from 'rxjs'
+import {
+    QuestionProgress,
+    TestProgressService,
+} from '../../services/test-progress.service'
+
+@Component({
+    selector: 'app-question',
+    templateUrl: './question.component.html',
+    styleUrls: ['./question.component.scss'],
+})
+export class QuestionComponent implements OnInit, OnDestroy {
+    @Input()
+    question$!: Observable<QuestionProgress | undefined>
+
+    answerForm = new FormArray<FormControl>([])
+    ngUnsubscribe = new Subject<void>()
+
+    constructor(private testProgressService: TestProgressService) {}
+
+    ngOnInit(): void {
+        this.question$
+            .pipe(takeUntil(this.ngUnsubscribe))
+            .subscribe((question) => {
+                if (!question) {
+                    return
+                }
+                this.answerForm = new FormArray<FormControl>(
+                    question.answers.map(() => new FormControl(false))
+                )
+            })
+    }
+
+    ngOnDestroy() {
+        this.ngUnsubscribe.next()
+        this.ngUnsubscribe.complete()
+    }
+
+    answer(event: Event) {
+        event.preventDefault()
+        this.testProgressService.answerQuestion(this.answerForm.value)
+    }
+
+    getAnswerText(index: number) {
+        return this.question$.pipe(
+            map((question) => question?.answers?.[index]?.text)
+        )
+    }
+
+    getAnswerId(index: number) {
+        return this.question$.pipe(
+            map((question) => question?.answers?.[index]?.id)
+        )
+    }
+
+    trackByFn(index: number, answer: any) {
+        return index + '_' + answer?.id
+    }
+}
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { CorrectStampComponent } from './correct-stamp.component';
+
+describe('CorrectStampComponent', () => {
+  let component: CorrectStampComponent;
+  let fixture: ComponentFixture<CorrectStampComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ CorrectStampComponent ]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(CorrectStampComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-correct-stamp',
+  templateUrl: './correct-stamp.component.html',
+  styleUrls: ['./correct-stamp.component.scss']
+})
+export class CorrectStampComponent implements OnInit {
+
+  constructor() { }
+
+  ngOnInit(): void {
+  }
+
+}
+import { ComponentFixture, TestBed } from '@angular/core/testing'
+
+import { ResultsComponent } from './results.component'
+
+describe('ResultsComponent', () => {
+    let component: ResultsComponent
+    let fixture: ComponentFixture<ResultsComponent>
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [ResultsComponent],
+        }).compileComponents()
+
+        fixture = TestBed.createComponent(ResultsComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+})
+import { Component, Input, OnInit, Output } from '@angular/core'
+import {
+    QuestionStatus,
+    TestProgress,
+    TestProgressService,
+    TestResults,
+} from '../../services/test-progress.service'
+import { Observable } from 'rxjs'
+
+@Component({
+    selector: 'app-results',
+    templateUrl: './results.component.html',
+    styleUrls: ['./results.component.scss'],
+})
+export class ResultsComponent implements OnInit {
+    questionStatus = QuestionStatus
+
+    @Input()
+    testProgress!: TestProgress | null
+
+    @Input()
+    testResults!: TestResults | null
+
+    constructor() {}
+
+    ngOnInit(): void {}
+}
+import { NgModule } from '@angular/core'
+import { RouterModule, Routes } from '@angular/router'
+import { TakeTestComponent } from './take-test.component'
+
+const routes: Routes = [
+    { path: '', component: TakeTestComponent },
+    { path: ':testId', component: TakeTestComponent },
+]
+
+@NgModule({
+    imports: [RouterModule.forChild(routes)],
+    exports: [RouterModule],
+})
+export class TakeTestRoutingModule {}
+import { ComponentFixture, TestBed } from '@angular/core/testing'
+
+import { TakeTestComponent } from './take-test.component'
+
+describe('TakeTestComponent', () => {
+    let component: TakeTestComponent
+    let fixture: ComponentFixture<TakeTestComponent>
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            declarations: [TakeTestComponent],
+        }).compileComponents()
+
+        fixture = TestBed.createComponent(TakeTestComponent)
+        component = fixture.componentInstance
+        fixture.detectChanges()
+    })
+
+    it('should create', () => {
+        expect(component).toBeTruthy()
+    })
+})
+import { Component, OnDestroy, OnInit } from '@angular/core'
+import { ActivatedRoute } from '@angular/router'
+import { Observable, Subject, takeUntil } from 'rxjs'
+import {
+    QuestionProgress,
+    TestProgress,
+    TestProgressService,
+    TestResults,
+} from '../services/test-progress.service'
+
+@Component({
+    selector: 'app-take-test',
+    templateUrl: './take-test.component.html',
+    styleUrls: ['./take-test.component.scss'],
+})
+export class TakeTestComponent implements OnInit, OnDestroy {
+    testProgress$: Observable<TestProgress | null>
+    currentQuestion$: Observable<QuestionProgress | undefined>
+    testComplete$: Observable<boolean>
+    testResults$: Observable<TestResults>
+
+    ngUnsubscribe = new Subject<void>()
+
+    constructor(
+        private testProgressService: TestProgressService,
+        private activatedRoute: ActivatedRoute
+    ) {
+        this.testProgress$ = this.testProgressService.testProgress$
+        this.currentQuestion$ = this.testProgressService.currentQuestion$
+        this.testComplete$ = this.testProgressService.testComplete$
+        this.testResults$ = this.testProgressService.testResults$
+    }
+
+    ngOnInit(): void {
+        this.activatedRoute.paramMap
+            .pipe(takeUntil(this.ngUnsubscribe))
+            .subscribe((params) => {
+                this.testProgressService.startTest(params.get('testId'))
+            })
+    }
+
+    ngOnDestroy(): void {
+        this.ngUnsubscribe.next()
+        this.ngUnsubscribe.complete()
+    }
+}
+import { NgModule } from '@angular/core'
+import { CommonModule } from '@angular/common'
+
+import { TakeTestRoutingModule } from './take-test-routing.module'
+import { TakeTestComponent } from './take-test.component'
+import { QuestionComponent } from './question/question.component'
+import { ReactiveFormsModule } from '@angular/forms'
+import { ResultsComponent } from './results/results.component';
+import { CorrectStampComponent } from './results/correct-stamp/correct-stamp.component'
+
+@NgModule({
+    declarations: [TakeTestComponent, QuestionComponent, ResultsComponent, CorrectStampComponent],
+    imports: [CommonModule, TakeTestRoutingModule, ReactiveFormsModule],
+})
+export class TakeTestModule {}
+export const environment = {
+    production: true,
+    backendUrl: 'http://localhost:8080',
+}
+// This file can be replaced during build by using the `fileReplacements` array.
+// `ng build` replaces `environment.ts` with `environment.prod.ts`.
+// The list of file replacements can be found in `angular.json`.
+
+export const environment = {
+    production: false,
+    backendUrl: 'http://localhost:8080',
+}
+
+/*
+ * For easier debugging in development mode, you can import the following file
+ * to ignore zone related error stack frames such as `zone.run`, `zoneDelegate.invokeTask`.
+ *
+ * This import should be commented out in production mode because it will have a negative impact
+ * on performance if an error is thrown.
+ */
+// import 'zone.js/plugins/zone-error';  // Included with Angular CLI.
+import { enableProdMode } from '@angular/core'
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
+
+import { AppModule } from './app/app.module'
+import { environment } from './environments/environment'
+
+if (environment.production) {
+    enableProdMode()
+}
+
+platformBrowserDynamic()
+    .bootstrapModule(AppModule)
+    .catch((err) => console.error(err))
+/**
+ * This file includes polyfills needed by Angular and is loaded before the app.
+ * You can add your own extra polyfills to this file.
+ *
+ * This file is divided into 2 sections:
+ *   1. Browser polyfills. These are applied before loading ZoneJS and are sorted by browsers.
+ *   2. Application imports. Files imported after ZoneJS that should be loaded before your main
+ *      file.
+ *
+ * The current setup is for so-called "evergreen" browsers; the last versions of browsers that
+ * automatically update themselves. This includes recent versions of Safari, Chrome (including
+ * Opera), Edge on the desktop, and iOS and Chrome on mobile.
+ *
+ * Learn more in https://angular.io/guide/browser-support
+ */
+
+/***************************************************************************************************
+ * BROWSER POLYFILLS
+ */
+
+/**
+ * By default, zone.js will patch all possible macroTask and DomEvents
+ * user can disable parts of macroTask/DomEvents patch by setting following flags
+ * because those flags need to be set before `zone.js` being loaded, and webpack
+ * will put import in the top of bundle, so user need to create a separate file
+ * in this directory (for example: zone-flags.ts), and put the following flags
+ * into that file, and then add the following code before importing zone.js.
+ * import './zone-flags';
+ *
+ * The flags allowed in zone-flags.ts are listed here.
+ *
+ * The following flags will work for all browsers.
+ *
+ * (window as any).__Zone_disable_requestAnimationFrame = true; // disable patch requestAnimationFrame
+ * (window as any).__Zone_disable_on_property = true; // disable patch onProperty such as onclick
+ * (window as any).__zone_symbol__UNPATCHED_EVENTS = ['scroll', 'mousemove']; // disable patch specified eventNames
+ *
+ *  in IE/Edge developer tools, the addEventListener will also be wrapped by zone.js
+ *  with the following flag, it will bypass `zone.js` patch for IE/Edge
+ *
+ *  (window as any).__Zone_enable_cross_context_check = true;
+ *
+ */
+
+/***************************************************************************************************
+ * Zone JS is required by default for Angular itself.
+ */
+import "zone.js"; // Included with Angular CLI.
+
+/***************************************************************************************************
+ * APPLICATION IMPORTS
+ */
+// This file is required by karma.conf.js and loads recursively all the .spec and framework files
+
+import 'zone.js/testing'
+import { getTestBed } from '@angular/core/testing'
+import {
+    BrowserDynamicTestingModule,
+    platformBrowserDynamicTesting,
+} from '@angular/platform-browser-dynamic/testing'
+
+declare const require: {
+    context(
+        path: string,
+        deep?: boolean,
+        filter?: RegExp
+    ): {
+        <T>(id: string): T
+        keys(): string[]
+    }
+}
+
+// First, initialize the Angular testing environment.
+getTestBed().initTestEnvironment(
+    BrowserDynamicTestingModule,
+    platformBrowserDynamicTesting()
+)
+
+// Then we find all the tests.
+const context = require.context('./', true, /\.spec\.ts$/)
+// And load the modules.
+context.keys().forEach(context)
+.question-container {
+  max-width: 500px;
+  width: 100%;
+  margin: 3rem auto;
+}
+$radius: 130px;
+h1{
+  width: $radius;
+  height: $radius;
+  border-radius: $radius;
+  line-height: $radius - 10px;
+  transform: rotate(25deg);
+  border: 5px double white;
+}
+.question-container {
+  max-width: 500px;
+  width: 100%;
+  margin: 3rem auto;
+}
+
+.card {
+  position: relative;
+}
+ .correct {
+   position: absolute;
+   right: -50px;
+   top: -50px;
+ }
