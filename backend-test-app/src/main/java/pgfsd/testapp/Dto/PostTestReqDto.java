@@ -1,7 +1,7 @@
 package pgfsd.testapp.Dto;
 
 
-import lombok.*;
+import lombok.Data;
 import pgfsd.testapp.entities.Test;
 
 import javax.validation.constraints.NotNull;
